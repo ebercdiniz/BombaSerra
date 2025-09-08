@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Controle de Bombas</title>
+    <style>
+      body { font-family: Arial, sans-serif; padding: 2rem; background: #f8f9fa; }
+      h1 { margin-bottom: 1.5rem; }
+      .btn { padding: .8rem 1.2rem; margin: .5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+      .status { margin-top: 1rem; font-weight: bold; }
+      .indicator {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-left: 0.5rem;
+        vertical-align: middle;
+        background: red; /* default off */
+      }
+      .bomb-row {
+        margin-bottom: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Controle de Bombas</h1>
+
+    <div class="bomb-row">
+      <button id="ronaldo" class="btn">Bomba do Ronaldo</button>
+      <span id="ronaldo-ind" class="indicator"></span>
+    </div>
+
+    <div class="bomb-row">
+      <button id="nene" class="btn">Bomba do Seu Nenê</button>
+      <span id="nene-ind" class="indicator"></span>
+    </div>
+
+    <div class="bomb-row">
+      <button id="eber" class="btn">Bomba do Eber/Abel</button>
+      <span id="eber-ind" class="indicator"></span>
+    </div>
+
+    <div class="bomb-row">
+      <span>Bomba D'água</span>
+      <span id="agua-ind" class="indicator"></span>
+    </div>
+
+    <p class="status">Estado atual: <span id="current">{{ mode }}</span></p>
+
+    <script>
+      let currentMode = "{{ mode }}";
+
+      function updateIndicators() {
+        const bombas = ['ronaldo','nene','eber'];
+        bombas.forEach(id => {
+          const ind = document.getElementById(id + '-ind');
+          ind.style.background = (currentMode === id) ? 'green' : 'red';
+        });
+
+        // Bomba D'água acende se qualquer bomba estiver ligada
+        const aguaInd = document.getElementById('agua-ind');
+        aguaInd.style.background = (currentMode === 'none') ? 'red' : 'green';
+      }
+
+      async function fetchState() {
+        const res = await fetch('/api/state/');
+        const j = await res.json();
+        currentMode = j.mode;
+        updateIndicators();
+      }
+
+      async function setMode(mode) {
+        await fetch('/api/set_mode/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+        await fetchState();
+      }
+
+      document.getElementById('ronaldo').addEventListener('click', () => {
+        setMode(currentMode === 'ronaldo' ? 'none' : 'ronaldo');
+      });
+      document.getElementById('nene').addEventListener('click', () => {
+        setMode(currentMode === 'nene' ? 'none' : 'nene');
+      });
+      document.getElementById('eber').addEventListener('click', () => {
+        setMode(currentMode === 'eber' ? 'none' : 'eber');
+      });
+
+      // Atualiza logo na carga
+      updateIndicators();
+      // Atualiza a cada 2s
+      setInterval(fetchState, 2000);
+    </script>
+  </body>
+</html>
+
