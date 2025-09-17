@@ -1,3 +1,5 @@
+{% load static %}
+
 <!doctype html>
 <html lang="pt-br">
   <head>
@@ -5,45 +7,35 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Controle de Bombas</title>
     <style>
-      body { font-family: Arial, sans-serif; padding: 2rem; background: #f8f9fa; }
-      h1 { margin-bottom: 1.5rem; }
-      .btn { padding: .8rem 1.2rem; margin: .5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
-      .status { margin-top: 1rem; font-weight: bold; }
-      .indicator {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border-radius: 50%;
-        margin-left: 0.5rem;
-        vertical-align: middle;
-        background: red; /* default off */
-      }
-      .bomb-row {
-        margin-bottom: 1rem;
-      }
+      body { font-family: Arial, sans-serif; padding: 2rem; background: #f0f4f8; text-align: center; }
+      h1 { margin-bottom: 2rem; }
+      .bomb-row { margin-bottom: 2rem; display: inline-block; }
+      .bomb-img { width: 320px; height: 320px; cursor: pointer; border-radius: 12px; border: 2px solid #ccc; transition: transform 0.2s; }
+      .bomb-img:hover { transform: scale(1.05); }
+      .status { margin-top: 2rem; font-weight: bold; font-size: 1.2rem; }
     </style>
   </head>
   <body>
     <h1>Controle de Bombas</h1>
 
     <div class="bomb-row">
-      <button id="ronaldo" class="btn">Bomba do Ronaldo</button>
-      <span id="ronaldo-ind" class="indicator"></span>
+      <p>Bomba do Ronaldo</p>
+      <img id="ronaldo-img" class="bomb-img" src="{% static 'torneira_off.png' %}" alt="Bomba Ronaldo">
     </div>
 
     <div class="bomb-row">
-      <button id="nene" class="btn">Bomba do Seu Nenê</button>
-      <span id="nene-ind" class="indicator"></span>
+      <p>Bomba do Seu Nenê</p>
+      <img id="nene-img" class="bomb-img" src="{% static 'torneira_off.png' %}" alt="Bomba Seu Nene">
     </div>
 
     <div class="bomb-row">
-      <button id="eber" class="btn">Bomba do Eber/Abel</button>
-      <span id="eber-ind" class="indicator"></span>
+      <p>Bomba do Eber/Abel</p>
+      <img id="eber-img" class="bomb-img" src="{% static 'torneira_off.png' %}" alt="Bomba Eber/Abel">
     </div>
-
+<br><br>
     <div class="bomb-row">
-      <span>Bomba D'água</span>
-      <span id="agua-ind" class="indicator"></span>
+      <p>Bomba D'água</p>
+      <img id="agua-img" class="bomb-img" src="{% static 'motor_off.png' %}" alt="Bomba D'água">
     </div>
 
     <p class="status">Funcionamento: <span id="current">{{ mode }}</span></p>
@@ -51,16 +43,24 @@
     <script>
       let currentMode = "{{ mode }}";
 
+      const bombas = [
+        {id: 'ronaldo', imgOn: '{% static 'torneira_on.png' %}', imgOff: '{% static 'torneira_off.png' %}'},
+        {id: 'nene', imgOn: '{% static 'torneira_on.png' %}', imgOff: '{% static 'torneira_off.png' %}'},
+        {id: 'eber', imgOn: '{% static 'torneira_on.png' %}', imgOff: '{% static 'torneira_off.png' %}'},
+      ];
+
+      const aguaImg = {imgOn: '{% static 'motor_on.png' %}', imgOff: '{% static 'motor_off.png' %}'};
+
       function updateIndicators() {
-        const bombas = ['ronaldo','nene','eber'];
-        bombas.forEach(id => {
-          const ind = document.getElementById(id + '-ind');
-          ind.style.background = (currentMode === id) ? 'green' : 'red';
+        bombas.forEach(b => {
+          const el = document.getElementById(b.id + '-img');
+          el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
         });
 
-        // Bomba D'água acende se qualquer bomba estiver ligada
-        const aguaInd = document.getElementById('agua-ind');
-        aguaInd.style.background = (currentMode === 'none') ? 'red' : 'green';
+        const aguaEl = document.getElementById('agua-img');
+        aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
+
+        document.getElementById('current').innerText = currentMode;
       }
 
       async function fetchState() {
@@ -79,21 +79,18 @@
         await fetchState();
       }
 
-      document.getElementById('ronaldo').addEventListener('click', () => {
-        setMode(currentMode === 'ronaldo' ? 'none' : 'ronaldo');
-      });
-      document.getElementById('nene').addEventListener('click', () => {
-        setMode(currentMode === 'nene' ? 'none' : 'nene');
-      });
-      document.getElementById('eber').addEventListener('click', () => {
-        setMode(currentMode === 'eber' ? 'none' : 'eber');
+      bombas.forEach(b => {
+        document.getElementById(b.id + '-img').addEventListener('click', () => {
+          setMode(currentMode === b.id ? 'none' : b.id);
+        });
       });
 
-      // Atualiza logo na carga
+      document.getElementById('agua-img').addEventListener('click', () => {
+        // Se quiser que a bomba d'água não seja clicável, pode remover este listener
+      });
+
       updateIndicators();
-      // Atualiza a cada 2s
       setInterval(fetchState, 2000);
     </script>
   </body>
 </html>
-
