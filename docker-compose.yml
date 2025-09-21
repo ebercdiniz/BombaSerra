@@ -7,13 +7,12 @@ services:
     command: "gunicorn -w 4 -b 0.0.0.0:8001 BombaSerra.wsgi:application"
     volumes:
       - .:/app
-      - static_bombaserra:/app/static
+      - static_bombaserra:/app/staticfiles
     ports:
       - "8001:8001"
 
 volumes:
   static_bombaserra:
-  media_bombaserra:
 
 networks:
   bombaserra-net:
