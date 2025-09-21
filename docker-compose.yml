@@ -3,11 +3,11 @@ version: "3.13"
 services:
   web:
     build: .
+    container_name: bombaserra-app
     command: "gunicorn -w 4 -b 0.0.0.0:8001 BombaSerra.wsgi:application"
     volumes:
       - .:/app
       - static_bombaserra:/app/static
-      - media_bombaserra:/app/media
     ports:
       - "8001:8001"
 
