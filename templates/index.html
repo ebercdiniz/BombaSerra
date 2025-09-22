@@ -59,17 +59,21 @@
       const esp32Img = {imgOn: '{% static "botaoon.png" %}', imgOff: '{% static "botaooff.png" %}'};
 
       function updateIndicators() {
+        // Atualiza bombas
         bombas.forEach(b => {
           const el = document.getElementById(b.id + '-img');
-          el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
+          el.src = (currentMode === b.id && esp32Online) ? b.imgOn : b.imgOff;
         });
 
+        // Atualiza bomba d'água
         const aguaEl = document.getElementById('agua-img');
-        aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
+        aguaEl.src = (currentMode !== 'none' && esp32Online) ? aguaImg.imgOn : aguaImg.imgOff;
 
+        // Atualiza botão ESP32
         const esp32El = document.getElementById('esp32-img');
         esp32El.src = esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
 
+        // Atualiza texto
         document.getElementById('current').innerText = currentMode;
       }
 
@@ -79,7 +83,7 @@
           const j = await res.json();
 
           currentMode = j.mode || 'none';
-          esp32Online = j.esp32_online;  // <-- depende do Django
+          esp32Online = j.esp32_online; // depende do Django
           updateIndicators();
         } catch (e) {
           console.error("Erro ao buscar estado:", e);
@@ -89,6 +93,7 @@
       }
 
       async function setMode(mode) {
+        if (!esp32Online) return; // Bloqueia se ESP32 offline
         try {
           await fetch('/api/set_mode/', {
             method: 'POST',
@@ -101,13 +106,15 @@
         }
       }
 
+      // Clique nas bombas
       bombas.forEach(b => {
         document.getElementById(b.id + '-img').addEventListener('click', () => {
           setMode(currentMode === b.id ? 'none' : b.id);
         });
       });
 
-      document.getElementById('agua-img').addEventListener('click', () => {}); // não clicável
+      // Bomba d'água não clicável
+      document.getElementById('agua-img').addEventListener('click', () => {});
 
       // Inicializa
       updateIndicators();
