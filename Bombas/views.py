@@ -6,7 +6,6 @@ from .models import Mode
 from django.utils import timezone
 import logging
 
-
 # Função auxiliar para calcular o estado dos pinos
 def compute_pins(mode):
     pins = {'21': 0, '5': 0, '18': 0, '19': 0}
@@ -22,7 +21,6 @@ def compute_pins(mode):
         pins['19'] = 1
     return pins
 
-
 # Página principal (usando TemplateView)
 class IndexView(TemplateView):
     template_name = 'index.html'
@@ -34,15 +32,13 @@ class IndexView(TemplateView):
         context['mode'] = current.mode
         return context
 
-
 # API para o ESP32 enviar ping
 @api_view(['POST'])
 def esp32_ping(request):
     obj, _ = Mode.objects.get_or_create(pk=1)
-    obj.last_ping = timezone.now()  # <-- atualiza hora do último ping
+    obj.last_ping = timezone.now()  # atualiza hora do último ping
     obj.save(update_fields=['last_ping'])
     return Response({'status': 'ok'})
-
 
 # API para obter estado atual (só lê, não altera last_ping)
 @api_view(['GET'])
@@ -61,7 +57,10 @@ def get_state(request):
             'pins': pins,
             'esp32_online': esp32_online
         })
-
+    except Exception as e:
+        logging.error(f"Erro ao obter estado: {e}")
+        return Response({'mode': 'none', 'pins': {}, 'esp32_online': False},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # API para definir o modo
 @api_view(['POST'])
