@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Mode
-
+from django.utils import timezone
 import logging
 
 
@@ -36,16 +36,31 @@ class IndexView(TemplateView):
 
 
 # API para obter estado atual
+# API para o ESP32 enviar ping
+@api_view(['POST'])
+def esp32_ping(request):
+    obj, _ = Mode.objects.get_or_create(pk=1)
+    obj.last_ping = timezone.now()  # <-- atualiza hora do último ping
+    obj.save()
+    return Response({'status': 'ok'})
+
 @api_view(['GET'])
 def get_state(request):
     try:
         logging.warning("Get")
         obj, _ = Mode.objects.get_or_create(pk=1)
         pins = compute_pins(obj.mode)
-        return Response({'mode': obj.mode, 'pins': pins})
+        delta = (timezone.now() - obj.last_ping).total_seconds() if obj.last_ping else 9999
+        esp32_online = delta < 30  # 30s de timeout
+        return Response({
+            'mode': obj.mode,
+            'pins': pins,
+            'esp32_online': esp32_online
+        })
     except Exception as e:
         logging.error(f"Erro ao obter estado: {e}")
-        return Response({'mode': 'none', 'pins': {}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'mode': 'none', 'pins': {}, 'esp32_online': False},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # API para definir o modo

@@ -72,10 +72,11 @@
 
     const esp32El = document.getElementById('esp32-img');
     const now = Date.now();
-    if (now - lastPingTime > 30000) {
-      esp32El.src = esp32Img.imgOff;  // Exibe a imagem do ESP32 desligado
+    const esp32El = document.getElementById('esp32-img');
+    if (window.esp32Online) {
+        esp32El.src = esp32Img.imgOn;
     } else {
-      esp32El.src = esp32Img.imgOn;   // Exibe a imagem do ESP32 ligado
+         esp32El.src = esp32Img.imgOff;
     }
 
     document.getElementById('current').innerText = currentMode;
@@ -87,7 +88,8 @@
       const res = await fetch('/api/state/');
       const j = await res.json();
       currentMode = j.mode;
-      lastPingTime = Date.now(); // atualiza o horário do último ping
+      //lastPingTime = Date.now(); // atualiza o horário do último ping
+      window.esp32Online = j.esp32_online;  // salva info global
       updateIndicators();
     } catch (e) {
       console.error("Erro ao buscar estado:", e);
