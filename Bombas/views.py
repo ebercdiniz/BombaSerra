@@ -38,10 +38,14 @@ class IndexView(TemplateView):
 # API para obter estado atual
 @api_view(['GET'])
 def get_state(request):
-    logging.warning("Get")
-    obj, _ = Mode.objects.get_or_create(pk=1)
-    pins = compute_pins(obj.mode)
-    return Response({'mode': obj.mode, 'pins': pins})
+    try:
+        logging.warning("Get")
+        obj, _ = Mode.objects.get_or_create(pk=1)
+        pins = compute_pins(obj.mode)
+        return Response({'mode': obj.mode, 'pins': pins})
+    except Exception as e:
+        logging.error(f"Erro ao obter estado: {e}")
+        return Response({'mode': 'none', 'pins': {}}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # API para definir o modo

@@ -46,80 +46,88 @@
     <p class="status">Funcionamento: <span id="current">{{ mode }}</span></p>
 
     <script>
-      // Variáveis iniciais
-      let currentMode = "{{ mode }}";
-      let lastPingTime = Date.now(); // horário do último ping do ESP32
+  // Variáveis iniciais
+  let currentMode = "{{ mode }}";
+  let lastPingTime = Date.now(); // horário do último ping do ESP32
 
-      const bombas = [
-        {id: 'ronaldo', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
-        {id: 'nene', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
-        {id: 'eber', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
-      ];
+  const bombas = [
+    {id: 'ronaldo', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
+    {id: 'nene', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
+    {id: 'eber', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
+  ];
 
-      const aguaImg = {imgOn: '{% static "motor_on.png" %}', imgOff: '{% static "motor_off.png" %}'};
+  const aguaImg = {imgOn: '{% static "motor_on.png" %}', imgOff: '{% static "motor_off.png" %}'};
 
-      const esp32Img = {imgOn: '{% static "botaoon.png" %}', imgOff: '{% static "botaooff.png" %}'};
+  const esp32Img = {imgOn: '{% static "botaoon.png" %}', imgOff: '{% static "botaooff.png" %}'};
 
-      // Atualiza as imagens das bombas, bomba d'água e ESP32
-      function updateIndicators() {
-        bombas.forEach(b => {
-          const el = document.getElementById(b.id + '-img');
-          el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
-        });
+  // Atualiza as imagens das bombas, bomba d'água e ESP32
+  function updateIndicators() {
+    bombas.forEach(b => {
+      const el = document.getElementById(b.id + '-img');
+      el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
+    });
 
-        const aguaEl = document.getElementById('agua-img');
-        aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
+    const aguaEl = document.getElementById('agua-img');
+    aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
 
-        const esp32El = document.getElementById('esp32-img');
-        const now = Date.now();
-        esp32El.src = (now - lastPingTime > 30000) ? esp32Img.imgOff : esp32Img.imgOn;
+    const esp32El = document.getElementById('esp32-img');
+    const now = Date.now();
+    if (now - lastPingTime > 30000) {
+      esp32El.src = esp32Img.imgOff;  // Exibe a imagem do ESP32 desligado
+    } else {
+      esp32El.src = esp32Img.imgOn;   // Exibe a imagem do ESP32 ligado
+    }
 
-        document.getElementById('current').innerText = currentMode;
-      }
+    document.getElementById('current').innerText = currentMode;
+  }
 
-      // Busca o estado atual do servidor (ESP32)
-      async function fetchState() {
-        try {
-          const res = await fetch('/api/state/');
-          const j = await res.json();
-          currentMode = j.mode;
-          lastPingTime = Date.now(); // atualiza o horário do último ping
-          updateIndicators();
-        } catch (e) {
-          console.error("Erro ao buscar estado:", e);
-        }
-      }
-
-      // Função para alterar o mode manualmente
-      async function setMode(mode) {
-        try {
-          await fetch('/api/set_mode/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode })
-          });
-          await fetchState();
-        } catch (e) {
-          console.error("Erro ao setar mode:", e);
-        }
-      }
-
-      // Clique nas bombas para alternar ON/OFF
-      bombas.forEach(b => {
-        document.getElementById(b.id + '-img').addEventListener('click', () => {
-          setMode(currentMode === b.id ? 'none' : b.id);
-        });
-      });
-
-      // Bomba d'água não clicável
-      document.getElementById('agua-img').addEventListener('click', () => {});
-
-      // Inicializa indicadores
+  // Busca o estado atual do servidor (ESP32)
+  async function fetchState() {
+    try {
+      const res = await fetch('/api/state/');
+      const j = await res.json();
+      currentMode = j.mode;
+      lastPingTime = Date.now(); // atualiza o horário do último ping
       updateIndicators();
+    } catch (e) {
+      console.error("Erro ao buscar estado:", e);
+      // Se ocorrer erro, podemos tratar como se o ESP32 estivesse "desligado"
+      const esp32El = document.getElementById('esp32-img');
+      esp32El.src = esp32Img.imgOff;  // Exibe a imagem do ESP32 desligado
+    }
+  }
 
-      // Loops periódicos
-      setInterval(fetchState, 2000);  // Busca estado do servidor a cada 2s
-      setInterval(updateIndicators, 1000); // Atualiza imagens e checa timeout ESP32
-    </script>
+  // Função para alterar o mode manualmente
+  async function setMode(mode) {
+    try {
+      await fetch('/api/set_mode/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode })
+      });
+      await fetchState();
+    } catch (e) {
+      console.error("Erro ao setar mode:", e);
+    }
+  }
+
+  // Clique nas bombas para alternar ON/OFF
+  bombas.forEach(b => {
+    document.getElementById(b.id + '-img').addEventListener('click', () => {
+      setMode(currentMode === b.id ? 'none' : b.id);
+    });
+  });
+
+  // Bomba d'água não clicável
+  document.getElementById('agua-img').addEventListener('click', () => {});
+
+  // Inicializa indicadores
+  updateIndicators();
+
+  // Loops periódicos
+  setInterval(fetchState, 2000);  // Busca estado do servidor a cada 2s
+  setInterval(updateIndicators, 1000); // Atualiza imagens e checa timeout ESP32
+</script>
+
   </body>
 </html>
