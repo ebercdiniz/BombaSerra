@@ -47,7 +47,8 @@
 
     <script>
       let currentMode = "{{ mode }}";
-      let esp32LastSeen = Date.now();
+      let esp32LastSeen = 0; // timestamp do último ping
+      const TIMEOUT_MS = 30000; // 30 segundos sem resposta → offline
       window.esp32Online = false;
 
       const bombas = [
@@ -60,31 +61,35 @@
       const esp32Img = {imgOn: '{% static "botaoon.png" %}', imgOff: '{% static "botaooff.png" %}'};
 
       function updateIndicators() {
+        // Bombas
         bombas.forEach(b => {
           const el = document.getElementById(b.id + '-img');
           el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
         });
 
+        // Bomba d'água
         const aguaEl = document.getElementById('agua-img');
         aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
 
+        // ESP32
         const esp32El = document.getElementById('esp32-img');
-        // Timeout de 30s sem resposta → desliga
-        if (Date.now() - esp32LastSeen > 30000) {
-          window.esp32Online = false;
-        }
+        // Checa timeout
+        if (Date.now() - esp32LastSeen > TIMEOUT_MS) window.esp32Online = false;
         esp32El.src = window.esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
 
+        // Status textual
         document.getElementById('current').innerText = currentMode;
       }
 
       async function fetchState() {
         try {
           const res = await fetch('/api/state/');
-          const j = await res.json();
-          currentMode = j.mode || 'none';
-          window.esp32Online = true;  // cada fetch bem-sucedido indica online
-          esp32LastSeen = Date.now();
+          const data = await res.json();
+          currentMode = data.mode || 'none';
+          if (data.esp32_online) {
+            window.esp32Online = true;
+            esp32LastSeen = Date.now();
+          }
           updateIndicators();
         } catch (e) {
           console.error("Erro ao buscar estado:", e);
@@ -104,20 +109,22 @@
         }
       }
 
+      // Eventos de clique nas bombas
       bombas.forEach(b => {
         document.getElementById(b.id + '-img').addEventListener('click', () => {
           setMode(currentMode === b.id ? 'none' : b.id);
         });
       });
 
+      // Bomba d'água não clicável
       document.getElementById('agua-img').addEventListener('click', () => {});
 
-      // Inicializa indicadores
+      // Inicializa
       updateIndicators();
 
       // Loops periódicos
-      setInterval(fetchState, 2000);
-      setInterval(updateIndicators, 1000);
+      setInterval(fetchState, 2000);  // Atualiza estado do servidor
+      setInterval(updateIndicators, 1000); // Atualiza imagens / timeout ESP32
     </script>
   </body>
 </html>

@@ -49,6 +49,8 @@ def get_state(request):
     try:
         logging.warning("Get")
         obj, _ = Mode.objects.get_or_create(pk=1)
+        obj.last_ping = timezone.now()
+        obj.save(update_fields=['last_ping'])
         pins = compute_pins(obj.mode)
         delta = (timezone.now() - obj.last_ping).total_seconds() if obj.last_ping else 9999
         esp32_online = delta < 30  # 30s de timeout
