@@ -12,6 +12,7 @@
       .bomb-img { width: 320px; height: 320px; cursor: pointer; border-radius: 12px; border: 2px solid #ccc; transition: transform 0.2s; }
       .bomb-img:hover { transform: scale(1.05); }
       .status { margin-top: 2rem; font-weight: bold; font-size: 1.2rem; }
+      .esp32-status { width: 20px; height: 20px; display: inline-block; border-radius: 50%; margin-left: 10px; vertical-align: middle; border: 1px solid #333; }
     </style>
   </head>
   <body>
@@ -39,7 +40,9 @@
     </div>
 
     <div class="bomb-row">
-      <p>ESP32</p>
+      <p>ESP32
+        <span id="esp32-indicator" class="esp32-status"></span>
+      </p>
       <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.png' %}" alt="ESP32">
     </div>
 
@@ -47,7 +50,8 @@
 
     <script>
       let currentMode = "{{ mode }}";
-      let esp32Online = false;
+      let esp32LastSeen = 0;
+      window.esp32Online = false;
 
       const bombas = [
         {id: 'ronaldo', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
@@ -59,41 +63,47 @@
       const esp32Img = {imgOn: '{% static "botaoon.png" %}', imgOff: '{% static "botaooff.png" %}'};
 
       function updateIndicators() {
-        // Atualiza bombas
         bombas.forEach(b => {
           const el = document.getElementById(b.id + '-img');
-          el.src = (currentMode === b.id && esp32Online) ? b.imgOn : b.imgOff;
+          el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
         });
 
-        // Atualiza bomba d'água
         const aguaEl = document.getElementById('agua-img');
-        aguaEl.src = (currentMode !== 'none' && esp32Online) ? aguaImg.imgOn : aguaImg.imgOff;
+        aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
 
-        // Atualiza botão ESP32
         const esp32El = document.getElementById('esp32-img');
-        esp32El.src = esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
+        const esp32Indicator = document.getElementById('esp32-indicator');
 
-        // Atualiza texto
+        // Timeout de 30s sem resposta → offline
+        const now = Date.now();
+        if (now - esp32LastSeen > 30000) {
+          window.esp32Online = false;
+        }
+
+        esp32El.src = window.esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
+        esp32Indicator.style.backgroundColor = window.esp32Online ? 'green' : 'red';
+
         document.getElementById('current').innerText = currentMode;
       }
 
       async function fetchState() {
         try {
           const res = await fetch('/api/state/');
-          const j = await res.json();
+          const data = await res.json();
+          currentMode = data.mode || 'none';
 
-          currentMode = j.mode || 'none';
-          esp32Online = j.esp32_online; // depende do Django
+          if (data.esp32_online) {
+            window.esp32Online = true;
+            esp32LastSeen = Date.now();
+          }
+
           updateIndicators();
         } catch (e) {
           console.error("Erro ao buscar estado:", e);
-          esp32Online = false;  // assume offline se falhar
-          updateIndicators();
         }
       }
 
       async function setMode(mode) {
-        if (!esp32Online) return; // Bloqueia se ESP32 offline
         try {
           await fetch('/api/set_mode/', {
             method: 'POST',
@@ -106,19 +116,18 @@
         }
       }
 
-      // Clique nas bombas
       bombas.forEach(b => {
         document.getElementById(b.id + '-img').addEventListener('click', () => {
           setMode(currentMode === b.id ? 'none' : b.id);
         });
       });
 
-      // Bomba d'água não clicável
       document.getElementById('agua-img').addEventListener('click', () => {});
 
-      // Inicializa
       updateIndicators();
-      setInterval(fetchState, 2000);  // busca do Django
+
+      setInterval(fetchState, 2000);  // Pega estado do servidor a cada 2s
+      setInterval(updateIndicators, 1000);
     </script>
   </body>
 </html>
