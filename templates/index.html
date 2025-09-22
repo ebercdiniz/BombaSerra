@@ -1,4 +1,5 @@
 {% load static %}
+
 <!doctype html>
 <html lang="pt-br">
   <head>
@@ -31,36 +32,25 @@
       <p>Bomba do Eber/Abel</p>
       <img id="eber-img" class="bomb-img" src="{% static 'torneira_off.png' %}" alt="Bomba Eber/Abel">
     </div>
-
-    <br><br>
+<br><br>
     <div class="bomb-row">
       <p>Bomba D'água</p>
       <img id="agua-img" class="bomb-img" src="{% static 'motor_off.png' %}" alt="Bomba D'água">
     </div>
 
-    <div class="bomb-row">
-      <p>Status do Sistema:</p>
-      <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.jpg' %}" alt="ESP32">
-    </div>
-
     <p class="status">Funcionamento: <span id="current">{{ mode }}</span></p>
 
     <script>
-      // Variáveis iniciais
       let currentMode = "{{ mode }}";
-      let lastPingTime = Date.now(); // horário do último ping do ESP32
 
       const bombas = [
-        {id: 'ronaldo', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
-        {id: 'nene', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
-        {id: 'eber', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
+        {id: 'ronaldo', imgOn: '{% static 'torneira_on.png' %}', imgOff: '{% static 'torneira_off.png' %}'},
+        {id: 'nene', imgOn: '{% static 'torneira_on.png' %}', imgOff: '{% static 'torneira_off.png' %}'},
+        {id: 'eber', imgOn: '{% static 'torneira_on.png' %}', imgOff: '{% static 'torneira_off.png' %}'},
       ];
 
-      const aguaImg = {imgOn: '{% static "motor_on.png" %}', imgOff: '{% static "motor_off.png" %}'};
+      const aguaImg = {imgOn: '{% static 'motor_on.png' %}', imgOff: '{% static 'motor_off.png' %}'};
 
-      const esp32Img = {imgOn: '{% static "botaoon.jpg" %}', imgOff: '{% static "botaooff.jpg" %}'};
-
-      // Atualiza as imagens das bombas, bomba d'água e ESP32
       function updateIndicators() {
         bombas.forEach(b => {
           const el = document.getElementById(b.id + '-img');
@@ -70,56 +60,37 @@
         const aguaEl = document.getElementById('agua-img');
         aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
 
-        const esp32El = document.getElementById('esp32-img');
-        const now = Date.now();
-        esp32El.src = (now - lastPingTime > 30000) ? esp32Img.imgOff : esp32Img.imgOn;
-
         document.getElementById('current').innerText = currentMode;
       }
 
-      // Busca o estado atual do servidor (ESP32)
       async function fetchState() {
-        try {
-          const res = await fetch('/api/state/');
-          const j = await res.json();
-          currentMode = j.mode;
-          lastPingTime = Date.now(); // atualiza o horário do último ping
-          updateIndicators();
-        } catch (e) {
-          console.error("Erro ao buscar estado:", e);
-        }
+        const res = await fetch('/api/state/');
+        const j = await res.json();
+        currentMode = j.mode;
+        updateIndicators();
       }
 
-      // Função para alterar o mode manualmente
       async function setMode(mode) {
-        try {
-          await fetch('/api/set_mode/', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode })
-          });
-          await fetchState();
-        } catch (e) {
-          console.error("Erro ao setar mode:", e);
-        }
+        await fetch('/api/set_mode/', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode })
+        });
+        await fetchState();
       }
 
-      // Clique nas bombas para alternar ON/OFF
       bombas.forEach(b => {
         document.getElementById(b.id + '-img').addEventListener('click', () => {
           setMode(currentMode === b.id ? 'none' : b.id);
         });
       });
 
-      // Bomba d'água não clicável
-      document.getElementById('agua-img').addEventListener('click', () => {});
+      document.getElementById('agua-img').addEventListener('click', () => {
+        // Se quiser que a bomba d'água não seja clicável, pode remover este listener
+      });
 
-      // Inicializa indicadores
       updateIndicators();
-
-      // Loops periódicos
-      setInterval(fetchState, 2000);  // Busca estado do servidor a cada 2s
-      setInterval(updateIndicators, 1000); // Atualiza imagens e checa timeout ESP32
+      setInterval(fetchState, 2000);
     </script>
   </body>
 </html>
