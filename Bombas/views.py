@@ -36,7 +36,6 @@ class IndexView(TemplateView):
 @api_view(['POST'])
 def esp32_ping(request):
     obj, _ = Mode.objects.get_or_create(pk=1)
-    obj.last_ping = timezone.now()  # atualiza hora do último ping
     obj.save(update_fields=['last_ping'])
     return Response({'status': 'ok'})
 
