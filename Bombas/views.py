@@ -61,10 +61,6 @@ def get_state(request):
             'pins': pins,
             'esp32_online': esp32_online
         })
-    except Exception as e:
-        logging.error(f"Erro ao obter estado: {e}")
-        return Response({'mode': 'none', 'pins': {}, 'esp32_online': False},
-                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # API para definir o modo
