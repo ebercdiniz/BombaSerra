@@ -50,7 +50,8 @@ def get_state(request):
         # Calcula se o ESP32 está online com base no último ping real
         delta = (timezone.now() - obj.last_ping).total_seconds() if obj.last_ping else 9999
         esp32_online = delta < 30  # Timeout 30s
-
+        logging.warning(delta)
+        logging.warning(esp32_online)
         return Response({
             'mode': obj.mode,
             'pins': pins,
@@ -72,6 +73,7 @@ def set_mode(request):
     obj.mode = mode
     obj.save(update_fields=['mode'])
     logging.warning("Pinos atualizados")
+    logging.warning(update_fields=['mode'])
     pins = compute_pins(mode)
     logging.warning(pins)
     return Response({'mode': mode, 'pins': pins})
