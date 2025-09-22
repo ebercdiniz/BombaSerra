@@ -12,6 +12,7 @@
       .bomb-img { width: 320px; height: 320px; cursor: pointer; border-radius: 12px; border: 2px solid #ccc; transition: transform 0.2s; }
       .bomb-img:hover { transform: scale(1.05); }
       .status { margin-top: 2rem; font-weight: bold; font-size: 1.2rem; }
+      .esp32-status { width: 20px; height: 20px; display: inline-block; border-radius: 50%; margin-left: 10px; vertical-align: middle; border: 1px solid #333; }
     </style>
   </head>
   <body>
@@ -39,7 +40,9 @@
     </div>
 
     <div class="bomb-row">
-      <p>ESP32</p>
+      <p>ESP32
+        <span id="esp32-indicator" class="esp32-status"></span>
+      </p>
       <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.png' %}" alt="ESP32">
     </div>
 
@@ -69,12 +72,16 @@
         aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
 
         const esp32El = document.getElementById('esp32-img');
-        // Se o último ping foi há mais de 30s, considera offline
+        const esp32Indicator = document.getElementById('esp32-indicator');
+
+        // Timeout de 30s sem resposta → offline
         const now = Date.now();
         if (now - esp32LastSeen > 30000) {
           window.esp32Online = false;
         }
+
         esp32El.src = window.esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
+        esp32Indicator.style.backgroundColor = window.esp32Online ? 'green' : 'red';
 
         document.getElementById('current').innerText = currentMode;
       }
@@ -85,7 +92,6 @@
           const data = await res.json();
           currentMode = data.mode || 'none';
 
-          // Usa apenas o valor real do servidor para ESP32
           if (data.esp32_online) {
             window.esp32Online = true;
             esp32LastSeen = Date.now();
@@ -118,10 +124,8 @@
 
       document.getElementById('agua-img').addEventListener('click', () => {});
 
-      // Inicializa indicadores
       updateIndicators();
 
-      // Loops periódicos
       setInterval(fetchState, 2000);  // Pega estado do servidor a cada 2s
       setInterval(updateIndicators, 1000);
     </script>
