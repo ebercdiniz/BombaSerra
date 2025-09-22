@@ -73,7 +73,6 @@ def set_mode(request):
     obj.mode = mode
     obj.save(update_fields=['mode'])
     logging.warning("Pinos atualizados")
-    logging.warning(update_fields)
     pins = compute_pins(mode)
     logging.warning(pins)
     return Response({'mode': mode, 'pins': pins})
