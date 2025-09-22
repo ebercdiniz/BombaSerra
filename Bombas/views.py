@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Mode
+from django.utils import timezone
 
 import logging
 
@@ -40,6 +41,8 @@ class IndexView(TemplateView):
 def get_state(request):
     logging.warning("Get")
     obj, _ = Mode.objects.get_or_create(pk=1)
+    obj.last_ping = timezone.now()   # Atualiza o último ping
+    obj.save(update_fields=["last_ping"])
     pins = compute_pins(obj.mode)
     return Response({'mode': obj.mode, 'pins': pins})
 

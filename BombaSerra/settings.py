@@ -73,6 +73,7 @@ TEMPLATES = [
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+SESSION_COOKIE_NAME = "sessionid_bombaserra"
 
 #STATICFILES_DIRS = [
 #    BASE_DIR / "static",  # para arquivos estáticos globais
