@@ -40,7 +40,7 @@
 
     <div class="bomb-row">
       <p>ESP32</p>
-      <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.jpg' %}" alt="ESP32">
+      <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.png' %}" alt="ESP32">
     </div>
 
     <p class="status">Funcionamento: <span id="current">{{ mode }}</span></p>
@@ -58,7 +58,7 @@
 
       const aguaImg = {imgOn: '{% static "motor_on.png" %}', imgOff: '{% static "motor_off.png" %}'};
 
-      const esp32Img = {imgOn: '{% static "botaoon.jpg" %}', imgOff: '{% static "botaooff.jpg" %}'};
+      const esp32Img = {imgOn: '{% static "botaoon.png" %}', imgOff: '{% static "botaooff.png" %}'};
 
       // Atualiza as imagens das bombas, bomba d'água e ESP32
       function updateIndicators() {
