@@ -35,25 +35,27 @@ class IndexView(TemplateView):
         return context
 
 
-# API para obter estado atual
 # API para o ESP32 enviar ping
 @api_view(['POST'])
 def esp32_ping(request):
     obj, _ = Mode.objects.get_or_create(pk=1)
     obj.last_ping = timezone.now()  # <-- atualiza hora do último ping
-    obj.save()
+    obj.save(update_fields=['last_ping'])
     return Response({'status': 'ok'})
 
+
+# API para obter estado atual (só lê, não altera last_ping)
 @api_view(['GET'])
 def get_state(request):
     try:
-        logging.warning("Get")
+        logging.warning("Get state")
         obj, _ = Mode.objects.get_or_create(pk=1)
-        obj.last_ping = timezone.now()
-        obj.save(update_fields=['last_ping'])
         pins = compute_pins(obj.mode)
+
+        # Calcula se o ESP32 está online com base no último ping real
         delta = (timezone.now() - obj.last_ping).total_seconds() if obj.last_ping else 9999
-        esp32_online = delta < 30  # 30s de timeout
+        esp32_online = delta < 30  # Timeout 30s
+
         return Response({
             'mode': obj.mode,
             'pins': pins,
@@ -74,8 +76,8 @@ def set_mode(request):
 
     obj, _ = Mode.objects.get_or_create(pk=1)
     obj.mode = mode
-    obj.save()
-    logging.warning("Pinos")
+    obj.save(update_fields=['mode'])
+    logging.warning("Pinos atualizados")
     pins = compute_pins(mode)
     logging.warning(pins)
     return Response({'mode': mode, 'pins': pins})
