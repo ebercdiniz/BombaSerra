@@ -47,7 +47,7 @@
 
     <script>
       let currentMode = "{{ mode }}";
-      let esp32LastSeen = Date.now();
+      let esp32LastSeen = 0;
       window.esp32Online = false;
 
       const bombas = [
@@ -69,8 +69,9 @@
         aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
 
         const esp32El = document.getElementById('esp32-img');
-        // Timeout de 30s sem resposta → desliga
-        if (Date.now() - esp32LastSeen > 30000) {
+        // Se o último ping foi há mais de 30s, considera offline
+        const now = Date.now();
+        if (now - esp32LastSeen > 30000) {
           window.esp32Online = false;
         }
         esp32El.src = window.esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
@@ -84,16 +85,15 @@
           const data = await res.json();
           currentMode = data.mode || 'none';
 
-          // Usa o valor real do servidor para o ESP32
-          window.esp32Online = data.esp32_online === true;
-          if (window.esp32Online) esp32LastSeen = Date.now();
+          // Usa apenas o valor real do servidor para ESP32
+          if (data.esp32_online) {
+            window.esp32Online = true;
+            esp32LastSeen = Date.now();
+          }
 
           updateIndicators();
         } catch (e) {
           console.error("Erro ao buscar estado:", e);
-          // Se o fetch falhar, considera offline
-          window.esp32Online = false;
-          updateIndicators();
         }
       }
 
@@ -122,7 +122,7 @@
       updateIndicators();
 
       // Loops periódicos
-      setInterval(fetchState, 2000);
+      setInterval(fetchState, 2000);  // Pega estado do servidor a cada 2s
       setInterval(updateIndicators, 1000);
     </script>
   </body>
