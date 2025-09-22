@@ -47,7 +47,7 @@
 
     <script>
       let currentMode = "{{ mode }}";
-      let esp32Online = false;
+      let esp32Online = false;  // O estado do ESP32 depende do Django
 
       const bombas = [
         {id: 'ronaldo', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
@@ -61,11 +61,12 @@
       function updateIndicators() {
         bombas.forEach(b => {
           const el = document.getElementById(b.id + '-img');
-          el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
+          // Só acende se o ESP32 estiver online
+          el.src = (currentMode === b.id && esp32Online) ? b.imgOn : b.imgOff;
         });
 
         const aguaEl = document.getElementById('agua-img');
-        aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
+        aguaEl.src = (currentMode !== 'none' && esp32Online) ? aguaImg.imgOn : aguaImg.imgOff;
 
         const esp32El = document.getElementById('esp32-img');
         esp32El.src = esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
@@ -79,11 +80,12 @@
           const j = await res.json();
 
           currentMode = j.mode || 'none';
-          esp32Online = j.esp32_online;  // <-- depende do Django
+          esp32Online = j.esp32_online;  // Estado real enviado pelo Django
+
           updateIndicators();
         } catch (e) {
           console.error("Erro ao buscar estado:", e);
-          esp32Online = false;  // assume offline se falhar
+          esp32Online = false;  // Se houver erro, considera offline
           updateIndicators();
         }
       }
@@ -103,15 +105,18 @@
 
       bombas.forEach(b => {
         document.getElementById(b.id + '-img').addEventListener('click', () => {
-          setMode(currentMode === b.id ? 'none' : b.id);
+          if (esp32Online) {  // Só permite clicar se ESP32 estiver online
+            setMode(currentMode === b.id ? 'none' : b.id);
+          }
         });
       });
 
-      document.getElementById('agua-img').addEventListener('click', () => {}); // não clicável
+      document.getElementById('agua-img').addEventListener('click', () => {});
 
       // Inicializa
-      updateIndicators();
-      setInterval(fetchState, 2000);  // busca do Django
+      fetchState();
+      setInterval(fetchState, 2000);  // Atualiza estado a cada 2s
+      setInterval(updateIndicators, 1000);
     </script>
   </body>
 </html>
