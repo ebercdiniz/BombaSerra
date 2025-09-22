@@ -27,4 +27,5 @@ urlpatterns = [
     # APIs para o ESP32
     path('api/state/', views.get_state, name='api_state'),
     path('api/set_mode/', views.set_mode, name='api_set_mode'),
+    path('api/espstate/', views.esp32_state, name='api_espstate'),
 ]

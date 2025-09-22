@@ -39,6 +39,25 @@ def esp32_ping(request):
     obj.save(update_fields=['last_ping'])
     return Response({'status': 'ok'})
 
+@api_view(['GET'])
+def esp32_state(request):
+    try:
+        obj, _ = Mode.objects.get_or_create(pk=1)
+        obj.last_ping = timezone.now()
+        obj.save(update_fields=['last_ping'])
+
+        pins = compute_pins(obj.mode)
+
+        return Response({
+            'mode': obj.mode,
+            'pins': pins,
+            'esp32_online': True  # ESP32 respondeu, então está online
+        })
+    except Exception as e:
+        logging.error(f"Erro no esp32_state: {e}")
+        return Response({'mode': 'none', 'pins': {}, 'esp32_online': False},
+                        status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 # API para obter estado atual (só lê, não altera last_ping)
 @api_view(['GET'])
 def get_state(request):
