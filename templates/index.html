@@ -17,6 +17,12 @@
   </head>
   <body>
     <h1>Controle de Bombas</h1>
+    <div class="bomb-row">
+      <p>Atividade do Sistema
+        <span id="esp32-indicator" class="esp32-status"></span>
+      </p>
+      <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.png' %}" alt="ESP32">
+    </div><br><br>
 
     <div class="bomb-row">
       <p>Bomba do Ronaldo</p>
@@ -39,12 +45,6 @@
       <img id="agua-img" class="bomb-img" src="{% static 'motor_off.png' %}" alt="Bomba D'água">
     </div>
 
-    <div class="bomb-row">
-      <p>ESP32
-        <span id="esp32-indicator" class="esp32-status"></span>
-      </p>
-      <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.png' %}" alt="ESP32">
-    </div>
 
     <p class="status">Funcionamento: <span id="current">{{ mode }}</span></p>
 
