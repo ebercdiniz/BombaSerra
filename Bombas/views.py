@@ -62,7 +62,7 @@ def esp32_state(request):
 @api_view(['GET'])
 def get_state(request):
     try:
-        logging.warning("Get state")
+        logging.warning("Estado")
         obj, _ = Mode.objects.get_or_create(pk=1)
         pins = compute_pins(obj.mode)
 
