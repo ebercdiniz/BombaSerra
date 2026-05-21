@@ -9,16 +9,8 @@ import logging
 # Função auxiliar para calcular o estado dos pinos
 def compute_pins(mode):
     pins = {'21': 0, '5': 0, '18': 0, '19': 0}
-    if mode == 'ronaldo':
+    if mode == 'eber':
         pins['21'] = 1
-    elif mode == 'nene':
-        pins['21'] = 1
-        pins['5'] = 1
-        pins['18'] = 1
-    elif mode == 'eber':
-        pins['21'] = 1
-        pins['5'] = 1
-        pins['19'] = 1
     return pins
 
 # Página principal (usando TemplateView)
@@ -85,7 +77,7 @@ def get_state(request):
 @api_view(['POST'])
 def set_mode(request):
     mode = request.data.get('mode')
-    if mode not in ['none', 'ronaldo', 'nene', 'eber']:
+    if mode not in ['none', 'ligar', 'nene', 'eber']:
         return Response({'detail': 'invalid mode'}, status=status.HTTP_400_BAD_REQUEST)
 
     obj, _ = Mode.objects.get_or_create(pk=1)

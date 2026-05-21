@@ -26,7 +26,7 @@
 
     <div class="bomb-row">
       <p>Clique na imagem para ligar e desligar</p>
-      <img id="eber-img" class="bomb-img" src="{% static 'torneira_off.png' %}" alt="">
+      <img id="ligar-img" class="bomb-img" src="{% static 'torneira_off.png' %}" alt="">
     </div>
 
 
@@ -46,7 +46,7 @@
       window.esp32Online = false;
 
       const bombas = [
-        {id: 'eber', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
+        {id: 'ligar', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
       ];
 
       const aguaImg = {imgOn: '{% static "motor_on.png" %}', imgOff: '{% static "motor_off.png" %}'};
