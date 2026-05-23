@@ -5,119 +5,423 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <title>Controle de Bombas</title>
+
     <style>
-      body { font-family: Arial, sans-serif; padding: 2rem; background: #f0f4f8; text-align: center; }
-      h1 { margin-bottom: 2rem; }
-      .bomb-row { margin-bottom: 2rem; display: inline-block; }
-      .bomb-img { width: 320px; height: 320px; cursor: pointer; border-radius: 12px; border: 2px solid #ccc; transition: transform 0.2s; }
-      .bomb-img:hover { transform: scale(1.05); }
-      .status { margin-top: 2rem; font-weight: bold; font-size: 1.2rem; }
-      .esp32-status { width: 20px; height: 20px; display: inline-block; border-radius: 50%; margin-left: 10px; vertical-align: middle; border: 1px solid #333; }
+
+      body {
+        font-family: Arial, sans-serif;
+        padding: 2rem;
+        background: #f0f4f8;
+        text-align: center;
+      }
+
+      h1 {
+        margin-bottom: 1rem;
+      }
+
+      #server-clock {
+        font-size: 2.2rem;
+        font-weight: bold;
+        margin-bottom: 30px;
+        color: #222;
+      }
+
+      .bomb-row {
+        margin-bottom: 2rem;
+        display: inline-block;
+      }
+
+      .bomb-img {
+        width: 320px;
+        height: 320px;
+        cursor: pointer;
+        border-radius: 12px;
+        border: 2px solid #ccc;
+        transition: transform 0.2s;
+      }
+
+      .bomb-img:hover {
+        transform: scale(1.05);
+      }
+
+      .status {
+        margin-top: 2rem;
+        font-weight: bold;
+        font-size: 1.2rem;
+      }
+
+      .esp32-status {
+        width: 20px;
+        height: 20px;
+        display: inline-block;
+        border-radius: 50%;
+        margin-left: 10px;
+        vertical-align: middle;
+        border: 1px solid #333;
+      }
+
     </style>
   </head>
+
   <body>
+
     <h1>Controle de Bombas</h1>
+
+    <div id="server-clock">
+      --:--:--
+    </div>
+
     <div class="bomb-row">
-      <p>Atividade do Sistema
+
+      <p>
+        Atividade do Sistema
         <span id="esp32-indicator" class="esp32-status"></span>
       </p>
-      <img id="esp32-img" class="bomb-img" src="{% static 'botaooff.png' %}" alt="ESP32">
-    </div><br><br>
 
-    <div class="bomb-row">
-      <p>Clique na imagem para ligar e desligar</p>
-      <img id="ligar-img" class="bomb-img" src="{% static 'torneira_off.png' %}" alt="">
+      <img
+        id="esp32-img"
+        class="bomb-img"
+        src="{% static 'botaooff.png' %}"
+        alt="ESP32"
+      >
+
     </div>
-
-
 
     <br><br>
+
     <div class="bomb-row">
-      <p>Bomba D'água</p>
-      <img id="agua-img" class="bomb-img" src="{% static 'motor_off.png' %}" alt="Bomba D'água">
+
+      <p>Clique na imagem para ligar e desligar</p>
+
+      <img
+        id="eber-img"
+        class="bomb-img"
+        src="{% static 'torneira_off.png' %}"
+        alt=""
+      >
+
     </div>
 
+    <br><br>
 
-    <p class="status">Funcionamento: <span id="current">{{ mode }}</span></p>
+    <div class="bomb-row">
+
+      <p>Bomba D'água</p>
+
+      <img
+        id="agua-img"
+        class="bomb-img"
+        src="{% static 'motor_off.png' %}"
+        alt="Bomba D'água"
+      >
+
+    </div>
+
+    <p class="status">
+      Funcionamento:
+      <span id="current">{{ mode }}</span>
+    </p>
+
+    <hr style="margin:40px 0;">
+
+    <h2>Programação Automática</h2>
+
+    <div style="margin-bottom:20px;">
+
+      <select id="weekday">
+        <option value="0">Segunda</option>
+        <option value="1">Terça</option>
+        <option value="2">Quarta</option>
+        <option value="3">Quinta</option>
+        <option value="4">Sexta</option>
+        <option value="5">Sábado</option>
+        <option value="6">Domingo</option>
+      </select>
+
+      <input type="time" id="start_time">
+
+      <input type="time" id="end_time">
+
+      <button onclick="addSchedule()">
+        Adicionar
+      </button>
+
+    </div>
+
+    <div id="schedule-list">
+
+      {% for s in schedules %}
+
+        <div
+          style="
+            background:white;
+            padding:10px;
+            margin:10px auto;
+            width:400px;
+            border-radius:10px;
+            border:1px solid #ccc;
+          "
+        >
+
+          <b>{{ s.get_weekday_display }}</b>
+
+          —
+          {{ s.start_time|time:"H:i" }}
+          até
+          {{ s.end_time|time:"H:i" }}
+
+          <button
+            style="margin-left:20px;"
+            onclick="deleteSchedule({{ s.id }})"
+          >
+            Apagar
+          </button>
+
+        </div>
+
+      {% empty %}
+
+        <p>Nenhuma programação cadastrada</p>
+
+      {% endfor %}
+
+    </div>
 
     <script>
+
       let currentMode = "{{ mode }}";
+
       let esp32LastSeen = 0;
+
       window.esp32Online = false;
 
       const bombas = [
-        {id: 'ligar', imgOn: '{% static "torneira_on.png" %}', imgOff: '{% static "torneira_off.png" %}'},
+        {
+          id: 'eber',
+          imgOn: '{% static "torneira_on.png" %}',
+          imgOff: '{% static "torneira_off.png" %}'
+        },
       ];
 
-      const aguaImg = {imgOn: '{% static "motor_on.png" %}', imgOff: '{% static "motor_off.png" %}'};
-      const esp32Img = {imgOn: '{% static "botaoon.png" %}', imgOff: '{% static "botaooff.png" %}'};
+      const aguaImg = {
+        imgOn: '{% static "motor_on.png" %}',
+        imgOff: '{% static "motor_off.png" %}'
+      };
+
+      const esp32Img = {
+        imgOn: '{% static "botaoon.png" %}',
+        imgOff: '{% static "botaooff.png" %}'
+      };
+
+
+      async function addSchedule() {
+
+        const weekday = document.getElementById('weekday').value;
+
+        const start_time =
+          document.getElementById('start_time').value;
+
+        const end_time =
+          document.getElementById('end_time').value;
+
+        if (!start_time || !end_time) {
+
+          alert("Preencha os horários");
+
+          return;
+        }
+
+        try {
+
+          await fetch('/api/add_schedule/', {
+
+            method: 'POST',
+
+            headers: {
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              weekday,
+              start_time,
+              end_time
+            })
+
+          });
+
+          location.reload();
+
+        } catch (e) {
+
+          console.error(e);
+        }
+      }
+
+
+      async function deleteSchedule(id) {
+
+        try {
+
+          await fetch('/api/delete_schedule/', {
+
+            method: 'POST',
+
+            headers: {
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              id
+            })
+
+          });
+
+          location.reload();
+
+        } catch (e) {
+
+          console.error(e);
+        }
+      }
+
 
       function updateIndicators() {
+
         bombas.forEach(b => {
-          const el = document.getElementById(b.id + '-img');
-          el.src = (currentMode === b.id) ? b.imgOn : b.imgOff;
+
+          const el =
+            document.getElementById(b.id + '-img');
+
+          el.src =
+            (currentMode === b.id)
+            ? b.imgOn
+            : b.imgOff;
         });
 
-        const aguaEl = document.getElementById('agua-img');
-        aguaEl.src = (currentMode === 'none') ? aguaImg.imgOff : aguaImg.imgOn;
+        const aguaEl =
+          document.getElementById('agua-img');
 
-        const esp32El = document.getElementById('esp32-img');
-        const esp32Indicator = document.getElementById('esp32-indicator');
+        aguaEl.src =
+          (currentMode === 'none')
+          ? aguaImg.imgOff
+          : aguaImg.imgOn;
 
-        // Timeout de 30s sem resposta → offline
+        const esp32El =
+          document.getElementById('esp32-img');
+
+        const esp32Indicator =
+          document.getElementById('esp32-indicator');
+
         const now = Date.now();
+
         if (now - esp32LastSeen > 30000) {
+
           window.esp32Online = false;
         }
 
-        esp32El.src = window.esp32Online ? esp32Img.imgOn : esp32Img.imgOff;
-        esp32Indicator.style.backgroundColor = window.esp32Online ? 'green' : 'red';
+        esp32El.src =
+          window.esp32Online
+          ? esp32Img.imgOn
+          : esp32Img.imgOff;
 
-        document.getElementById('current').innerText = currentMode;
+        esp32Indicator.style.backgroundColor =
+          window.esp32Online
+          ? 'green'
+          : 'red';
+
+        document.getElementById('current').innerText =
+          currentMode;
       }
 
+
       async function fetchState() {
+
         try {
+
           const res = await fetch('/api/state/');
+
           const data = await res.json();
+
           currentMode = data.mode || 'none';
 
+          if (data.server_time) {
+
+            document.getElementById('server-clock')
+              .innerText = data.server_time;
+          }
+
           if (data.esp32_online) {
+
             window.esp32Online = true;
+
             esp32LastSeen = Date.now();
           }
 
           updateIndicators();
+
         } catch (e) {
+
           console.error("Erro ao buscar estado:", e);
         }
       }
 
+
       async function setMode(mode) {
+
         try {
+
           await fetch('/api/set_mode/', {
+
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mode })
+
+            headers: {
+              'Content-Type': 'application/json'
+            },
+
+            body: JSON.stringify({
+              mode
+            })
+
           });
+
           await fetchState();
+
         } catch (e) {
+
           console.error("Erro ao setar mode:", e);
         }
       }
 
+
       bombas.forEach(b => {
-        document.getElementById(b.id + '-img').addEventListener('click', () => {
-          setMode(currentMode === b.id ? 'none' : b.id);
-        });
+
+        document
+          .getElementById(b.id + '-img')
+          .addEventListener('click', () => {
+
+            setMode(
+              currentMode === b.id
+              ? 'none'
+              : b.id
+            );
+          });
       });
 
-      document.getElementById('agua-img').addEventListener('click', () => {});
+
+      document
+        .getElementById('agua-img')
+        .addEventListener('click', () => {});
+
 
       updateIndicators();
 
-      setInterval(fetchState, 2000);  // Pega estado do servidor a cada 2s
+      fetchState();
+
+      setInterval(fetchState, 2000);
+
       setInterval(updateIndicators, 1000);
+
     </script>
+
   </body>
 </html>
