@@ -27,6 +27,12 @@ class Mode(models.Model):
         default=False
     )
 
+    # Modo manual expira
+    manual_until = models.DateTimeField(
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
 
         return self.get_mode_display()

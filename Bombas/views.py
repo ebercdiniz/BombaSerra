@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from .models import Mode, Schedule
 from django.utils import timezone
+from datetime import timedelta
 import logging
 
 
@@ -17,9 +18,22 @@ def compute_pins(mode):
     # =========================
     if mode == 'eber':
 
-        pins['21'] = 1
+        obj = Mode.objects.get(pk=1)
 
-        return pins
+        if (
+                obj.manual_until is not None and
+                timezone.now() >= obj.manual_until
+        ):
+            obj.mode = "none"
+            obj.manual_until = None
+            obj.save(update_fields=[
+                "mode",
+                "manual_until"
+            ])
+        else:
+            pins["21"] = 1
+            return pins
+
 
     # =========================
     # MODO AUTOMÁTICO
@@ -208,7 +222,15 @@ def set_mode(request):
 
     obj.mode = mode
 
-    obj.save(update_fields=['mode'])
+    if mode == "eber":
+        obj.manual_until = timezone.now() + timedelta(hours=1)
+    else:
+        obj.manual_until = None
+
+    obj.save(update_fields=[
+        "mode",
+        "manual_until"
+    ])
 
     pins = compute_pins(mode)
 
