@@ -11,7 +11,7 @@ import logging
 # Função auxiliar para calcular o estado dos pinos
 def compute_pins(mode):
 
-    pins = {'21': 0, '5': 0, '18': 0, '19': 0}
+    pins = {'21': 1, '5': 0, '18': 0, '19': 0}
 
     # =========================
     # MODO MANUAL (já existente)
@@ -31,7 +31,7 @@ def compute_pins(mode):
                 "manual_until"
             ])
         else:
-            pins["21"] = 1
+            pins["21"] = 0
             return pins
 
 
@@ -58,7 +58,7 @@ def compute_pins(mode):
 
             if schedule.mode == 'eber':
 
-                pins['21'] = 1
+                pins['21'] = 0
 
             break
 
